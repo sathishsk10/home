@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Automation Control</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+</head>
+<body>
+    <div id="login-form">
+        <h2>Login</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <button onclick="resetPassword()">Reset Password</button>
+    </div>
+
+    <div id="wifi-settings" style="display: none;">
+        <h2>WiFi Settings</h2>
+        <label for="ssid">SSID:</label>
+        <input type="text" id="ssid" placeholder="Enter your SSID"><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" placeholder="Enter your Password"><br>
+        <button onclick="updateWiFi()">Update WiFi</button>
+    </div>
+
+    <div id="control-panel" style="display: none;">
+        <h2>Control Panel</h2>
+        <div>
+            <h3>Relays</h3>
+            <button onclick="setRelay(1, true)">Turn ON Relay 1</button>
+            <button onclick="setRelay(1, false)">Turn OFF Relay 1</button>
+            <span id="relay1-status">OFF</span>
+        </div>
+        <div>
+            <button onclick="setRelay(2, true)">Turn ON Relay 2</button>
+            <button onclick="setRelay(2, false)">Turn OFF Relay 2</button>
+            <span id="relay2-status">OFF</span>
+        </div>
+        <div>
+            <button onclick="setRelay(3, true)">Turn ON Relay 3</button>
+            <button onclick="setRelay(3, false)">Turn OFF Relay 3</button>
+            <span id="relay3-status">OFF</span>
+        </div>
+        <div>
+            <button onclick="setRelay(4, true)">Turn ON Relay 4</button>
+            <button onclick="setRelay(4, false)">Turn OFF Relay 4</button>
+            <span id="relay4-status">OFF</span>
+        </div>
+        <div>
+            <h3>RGB LED Color</h3>
+            <input type="number" id="red" placeholder="Red (0-255)" min="0" max="255">
+            <input type="number" id="green" placeholder="Green (0-255)" min="0" max="255">
+            <input type="number" id="blue" placeholder="Blue (0-255)" min="0" max="255">
+            <button onclick="setColor()">Set Color</button>
+            <span id="led-status">RGB(0, 0, 0)</span>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSk3cUrMm98d7urlNEUq_YRsng5WOLRz8",
+            authDomain: "your-auth-domain",
+            databaseURL: "https://home-automation-kih-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "your-project-id",
+            storageBucket: "your-storage-bucket",
+            messagingSenderId: "your-messaging-sender-id",
+            appId: "your-app-id"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Login Function
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    toggleView('wifi-settings');
+                    listenForDeviceStatus();
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
+
+        // Reset Password Function
+        function resetPassword() {
+            const email = document.getElementById('email').value;
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    alert("Password reset email sent!");
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
+
+        // Update WiFi Settings
+        function updateWiFi() {
+            const userId = firebase.auth().currentUser.uid; // Get current user ID
+            const ssid = document.getElementById('ssid').value;
+            const password = document.getElementById('password').value;
+
+            // Update Firebase database with new SSID and password
+            firebase.database().ref('users/' + userId).set({
+                ssid: ssid,
+                password: password
+            }).then(() => {
+                alert("WiFi settings updated!");
+            }).catch((error) => {
+                console.error("Error updating WiFi settings: ", error);
+            });
+        }
+
+        // Set Relay Function
+        function setRelay(relayNum, state) {
+            firebase.database().ref('relay' + relayNum).set(state);
+        }
+
+        // Set LED Color Function
+        function setColor() {
+            const red = document.getElementById('red').value;
+            const green = document.getElementById('green').value;
+            const blue = document.getElementById('blue').value;
+            firebase.database().ref('led').set({ red: red, green: green, blue: blue });
+        }
+
+        // Listen for Device Status Changes
+        function listenForDeviceStatus() {
+            for (let i = 1; i <= 4; i++) {
+                firebase.database().ref('relay' + i).on('value', (snapshot) => {
+                    const status = snapshot.val() ? 'ON' : 'OFF';
+                    document.getElementById('relay' + i + '-status').innerText = status;
+                });
+            }
+
+            firebase.database().ref('led').on('value', (snapshot) => {
+                const ledColor = snapshot.val();
+                document.getElementById('led-status').innerText = `RGB(${ledColor.red}, ${ledColor.green}, ${ledColor.blue})`;
+            });
+        }
+
+        // Toggle View Function
+        function toggleView(view) {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('wifi-settings').style.display = 'none';
+            document.getElementById('control-panel').style.display = 'none';
+
+            if (view === 'login-form') {
+                document.getElementById('login-form').style.display = 'block';
+            } else if (view === 'wifi-settings') {
+                document.getElementById('wifi-settings').style.display = 'block';
+            } else if (view === 'control-panel') {
+                document.getElementById('control-panel').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
