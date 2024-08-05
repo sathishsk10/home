@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32 LED Control</title>
+  <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+  apiKey: "AIzaSyAfb_z_SlfI35O8ycNfiFlsuGHKsR8jktM",
+  authDomain: "led-control-f4fe4.firebaseapp.com",
+  databaseURL: "https://led-control-f4fe4-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "led-control-f4fe4",
+  storageBucket: "led-control-f4fe4.appspot.com",
+  messagingSenderId: "820681954766",
+  appId: "1:820681954766:web:4dc19940bc1b53ef77479f",
+  measurementId: "G-1GDRM7EQFQ"
+};
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    function toggleLED(state) {
+      firebase.database().ref("/LED").set(state);
+    }
+  </script>
+</head>
+<body>
+  <h1>ESP32 LED Control</h1>
+  <button onclick="toggleLED(1)">Turn ON</button>
+  <button onclick="toggleLED(0)">Turn OFF</button>
+</body>
+</html>
